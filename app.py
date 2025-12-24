@@ -5,23 +5,30 @@ import os
 
 st.set_page_config(page_title="Media Mixer", page_icon="🎬")
 
-# Minimal CSS to clean up the interface
+# Custom CSS for bigger icons and less clutter
 st.markdown("""
     <style>
     .stDeployButton {display:none;}
     footer {visibility: hidden;}
-    #MainMenu {visibility: hidden;}
-    .st-emotion-cache-1kyxreq {justify-content: center;}
+    .big-font { font-size:25px !important; font-weight: bold; }
+    .video-text { color: #3498db; }
+    .photo-text { color: #2ecc71; }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("🎬 Media Mixer")
 
-# Step 1: Uploads with Icons
-v_file = st.file_uploader("📁 Step 1: Upload Video (Sound Source)", type=["mp4", "mov", "avi"])
-img_files = st.file_uploader("🖼️ Step 2: Upload Photo(s)", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
+# --- Step 1: Video Section ---
+st.markdown('<p class="big-font video-text">🎥 1. Upload VIDEO (for sound)</p>', unsafe_allow_html=True)
+v_file = st.file_uploader("The sound will be taken from this video", type=["mp4", "mov", "avi"], label_visibility="collapsed")
 
-if st.button("🚀 Create Video"):
+st.markdown("---")
+
+# --- Step 2: Photo Section ---
+st.markdown('<p class="big-font photo-text">🖼️ 2. Upload PHOTO(S)</p>', unsafe_allow_html=True)
+img_files = st.file_uploader("Select one or more photos for the slideshow", type=["jpg", "jpeg", "png"], accept_multiple_files=True, label_visibility="collapsed")
+
+if st.button("✨ CREATE MY VIDEO ✨", use_container_width=True):
     if v_file and img_files:
         status = st.empty()
         bar = st.progress(0)
@@ -32,14 +39,14 @@ if st.button("🚀 Create Video"):
                 t_vid.write(v_file.read())
                 v_path = t_vid.name
 
-            status.text("⚙️ Processing...")
+            status.text("⚙️ Creating your slideshow...")
             
             # Load Audio
             video_clip = mp.VideoFileClip(v_path)
             audio = video_clip.audio
             total_duration = audio.duration
             
-            # Logic: Split time equally between photos
+            # Logic: Split time + add Fade
             num_photos = len(img_files)
             duration_per_photo = total_duration / num_photos
             
@@ -49,33 +56,32 @@ if st.button("🚀 Create Video"):
                     t_img.write(img_file.read())
                     i_path = t_img.name
                 
-                # Create a clip for each photo with calculated duration
-                clip = mp.ImageClip(i_path).with_duration(duration_per_photo)
+                # Create clip and add a 0.5s fade-in
+                clip = (mp.ImageClip(i_path)
+                        .with_duration(duration_per_photo)
+                        .with_effects([mp.vfx.CrossFadeIn(0.5)])) 
                 clips.append(clip)
-                # Note: We don't delete i_path yet as moviepy needs it for the final render
 
-            # Concatenate all photos into one sequence
+            # Join clips together
             final_slideshow = mp.concatenate_videoclips(clips, method="compose")
             final_video = final_slideshow.with_audio(audio)
             
-            out_file = "result.mp4"
+            out_file = "final_video.mp4"
             final_video.write_videofile(out_file, fps=24, codec="libx264", audio_codec="aac")
             
             bar.progress(100)
-            status.success("✅ Done!")
+            status.success("✅ Your video is ready!")
 
             st.video(out_file)
             with open(out_file, "rb") as f:
-                st.download_button("💾 Save Video", f, file_name="slideshow.mp4")
+                st.download_button("💾 DOWNLOAD VIDEO", f, file_name="my_creation.mp4", use_container_width=True)
 
             # Cleanup
             video_clip.close()
             final_video.close()
             os.remove(v_path)
-            # (In a real production app, you'd clean up the temp image paths here too)
 
         except Exception as e:
             st.error(f"Something went wrong: {e}")
     else:
-        st.warning("Please upload both a video and at least one photo!")
-
+        st.warning("Please make sure you've uploaded a video and at least one photo!")
