@@ -78,3 +78,4 @@ if st.button("🚀 Create Video"):
             st.error(f"Something went wrong: {e}")
     else:
         st.warning("Please upload both a video and at least one photo!")
+
