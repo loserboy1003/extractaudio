@@ -3,70 +3,84 @@ import moviepy as mp
 import tempfile
 import os
 
-st.set_page_config(page_title="mixer", page_icon="🎬", layout="centered")
+st.set_page_config(page_title="Media Mixer", page_icon="🎬", layout="centered")
 
-# ultra-modern mesh gradient UI
+# --- Advanced Animated Mesh UI ---
 st.markdown("""
     <style>
-    /* hide everything unnecessary */
+    /* hide streamlit clutter */
     .stDeployButton {display:none;}
     footer {visibility: hidden;}
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* mesh gradient background */
+    /* Animated Liquid Background */
     .stApp {
-        background-color: #0e1117;
-        background-image: 
-            radial-gradient(at 0% 0%, rgba(52, 152, 219, 0.15) 0px, transparent 50%),
-            radial-gradient(at 100% 100%, rgba(46, 204, 113, 0.15) 0px, transparent 50%);
+        background: linear-gradient(-45deg, #121212, #1a1c2c, #0d253f, #101010);
+        background-size: 400% 400%;
+        animation: gradient 15s ease infinite;
     }
 
-    /* lowercase font */
-    * { text-transform: lowercase !important; font-family: 'inter', sans-serif; }
+    @keyframes gradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
 
-    /* frosted glass cards */
+    /* Bold Headers */
+    h1, h2, h3, p {
+        font-family: 'Helvetica Neue', sans-serif;
+        font-weight: 700 !important;
+        letter-spacing: -0.5px;
+    }
+
+    /* High-End Glass Cards */
     .glass-card {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(10px);
-        border-radius: 24px;
-        padding: 25px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        margin-bottom: 20px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border-radius: 30px;
+        padding: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        margin-bottom: 25px;
+        text-align: center;
     }
 
-    /* minimal button */
+    /* Glow Button */
     div.stButton > button {
-        background: white;
-        color: black;
+        background: linear-gradient(90deg, #00C6FF 0%, #0072FF 100%);
+        color: white;
         border: none;
-        border-radius: 12px;
-        padding: 10px 30px;
-        font-weight: 500;
+        border-radius: 15px;
+        padding: 15px 40px;
+        font-weight: bold;
+        font-size: 18px;
         width: 100%;
-        transition: 0.3s;
+        box-shadow: 0 4px 15px rgba(0, 114, 255, 0.4);
+        transition: 0.3s all ease;
     }
     
     div.stButton > button:hover {
-        transform: scale(1.02);
-        background: #f0f0f0;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 114, 255, 0.6);
     }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🎬 mixer")
+st.title("🎬 Media Mixer Pro")
 
-# step 1: video
-st.markdown('<div class="glass-card">🎥 video (audio)</div>', unsafe_allow_html=True)
-v_file = st.file_uploader("v", type=["mp4", "mov", "avi"], label_visibility="collapsed")
+# --- Step 1 ---
+st.markdown('<div class="glass-card"><h3>🎥 Step 1: Video (Audio Source)</h3></div>', unsafe_allow_html=True)
+v_file = st.file_uploader("video", type=["mp4", "mov", "avi"], label_visibility="collapsed")
 
-# step 2: photos
-st.markdown('<div class="glass-card">🖼️ photo(s)</div>', unsafe_allow_html=True)
-img_files = st.file_uploader("p", type=["jpg", "jpeg", "png"], accept_multiple_files=True, label_visibility="collapsed")
+# --- Step 2 ---
+st.markdown('<div class="glass-card"><h3>🖼️ Step 2: Select Photo(s)</h3></div>', unsafe_allow_html=True)
+img_files = st.file_uploader("photos", type=["jpg", "jpeg", "png"], accept_multiple_files=True, label_visibility="collapsed")
 
-# action
+# --- Action ---
 st.write(" ")
-if st.button("start"):
+if st.button("GENERATE VIDEO"):
     if v_file and img_files:
         status = st.empty()
         
@@ -75,11 +89,12 @@ if st.button("start"):
                 t_vid.write(v_file.read())
                 v_path = t_vid.name
 
-            status.text("processing...")
+            status.info("🧬 Rendering your media...")
             
             video_clip = mp.VideoFileClip(v_path)
             audio = video_clip.audio
             
+            # Split time equally
             duration_per_photo = audio.duration / len(img_files)
             
             clips = []
@@ -88,21 +103,21 @@ if st.button("start"):
                     t_img.write(img_file.read())
                     i_path = t_img.name
                 
-                # smooth fade
+                # Professional Crossfade
                 clip = (mp.ImageClip(i_path)
                         .with_duration(duration_per_photo)
-                        .with_effects([mp.vfx.CrossFadeIn(0.5)]))
+                        .with_effects([mp.vfx.CrossFadeIn(0.6)]))
                 clips.append(clip)
 
             final_video = mp.concatenate_videoclips(clips, method="compose").with_audio(audio)
             
-            out_file = "output.mp4"
+            out_file = "final_output.mp4"
             final_video.write_videofile(out_file, fps=24, codec="libx264", audio_codec="aac")
             
-            status.text("done")
+            status.success("✨ Your video is ready!")
             st.video(out_file)
             
-            st.download_button("save", open(out_file, "rb"), file_name="video.mp4")
+            st.download_button("📥 DOWNLOAD AND SAVE", open(out_file, "rb"), file_name="creation.mp4")
 
             # cleanup
             video_clip.close()
@@ -110,6 +125,6 @@ if st.button("start"):
             os.remove(v_path)
 
         except Exception as e:
-            st.text("error")
+            st.error(f"Error: {e}")
     else:
-        st.text("upload first")
+        st.warning("Please upload files first!")
