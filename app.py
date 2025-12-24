@@ -1,69 +1,80 @@
 import streamlit as st
-import moviepy as mp  # New way to import
+import moviepy as mp
 import tempfile
 import os
 
-# Page Config
-st.set_page_config(page_title="Video Audio Tool", page_icon="🎬")
+st.set_page_config(page_title="Media Mixer", page_icon="🎬")
 
-st.title("🎬 Simple Video Maker")
-st.write("Extract audio from a video and put it on a photo.")
+# Minimal CSS to clean up the interface
+st.markdown("""
+    <style>
+    .stDeployButton {display:none;}
+    footer {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+    .st-emotion-cache-1kyxreq {justify-content: center;}
+    </style>
+    """, unsafe_allow_html=True)
 
-# Step 1: Uploads
-col1, col2 = st.columns(2)
+st.title("🎬 Media Mixer")
 
-with col1:
-    st.subheader("1. Pick your Video")
-    uploaded_video = st.file_uploader("Upload video for sound", type=["mp4", "mov", "avi"])
+# Step 1: Uploads with Icons
+v_file = st.file_uploader("📁 Step 1: Upload Video (Sound Source)", type=["mp4", "mov", "avi"])
+img_files = st.file_uploader("🖼️ Step 2: Upload Photo(s)", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
 
-with col2:
-    st.subheader("2. Pick your Photo")
-    uploaded_image = st.file_uploader("Upload background photo", type=["jpg", "jpeg", "png"])
-
-# Step 2: Action
-if st.button("✨ Create My New Video ✨"):
-    if uploaded_video and uploaded_image:
+if st.button("🚀 Create Video"):
+    if v_file and img_files:
         status = st.empty()
         bar = st.progress(0)
         
         try:
-            # Create temp files
+            # Save temporary video
             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as t_vid:
-                t_vid.write(uploaded_video.read())
+                t_vid.write(v_file.read())
                 v_path = t_vid.name
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as t_img:
-                t_img.write(uploaded_image.read())
-                i_path = t_img.name
 
-            status.text("Working on your video...")
-            bar.progress(50)
-
-            # --- PROCESS WITH MOVIEPY 2.0 SYNTAX ---
+            status.text("⚙️ Processing...")
+            
+            # Load Audio
             video_clip = mp.VideoFileClip(v_path)
             audio = video_clip.audio
+            total_duration = audio.duration
             
-            img_clip = mp.ImageClip(i_path).with_duration(audio.duration) # .with_duration is the new way
-            final_video = img_clip.with_audio(audio)
+            # Logic: Split time equally between photos
+            num_photos = len(img_files)
+            duration_per_photo = total_duration / num_photos
             
-            out_file = "final_creation.mp4"
-            # Setting fps to 24 and using a common codec
+            clips = []
+            for img_file in img_files:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as t_img:
+                    t_img.write(img_file.read())
+                    i_path = t_img.name
+                
+                # Create a clip for each photo with calculated duration
+                clip = mp.ImageClip(i_path).with_duration(duration_per_photo)
+                clips.append(clip)
+                # Note: We don't delete i_path yet as moviepy needs it for the final render
+
+            # Concatenate all photos into one sequence
+            final_slideshow = mp.concatenate_videoclips(clips, method="compose")
+            final_video = final_slideshow.with_audio(audio)
+            
+            out_file = "result.mp4"
             final_video.write_videofile(out_file, fps=24, codec="libx264", audio_codec="aac")
             
             bar.progress(100)
-            status.success("Done! See your video below.")
+            status.success("✅ Done!")
 
-            # Display and Download
             st.video(out_file)
             with open(out_file, "rb") as f:
-                st.download_button("📥 Save Video to Phone/PC", f, file_name="my_video.mp4")
+                st.download_button("💾 Save Video", f, file_name="slideshow.mp4")
 
-            # Clean up files
+            # Cleanup
             video_clip.close()
             final_video.close()
             os.remove(v_path)
-            os.remove(i_path)
+            # (In a real production app, you'd clean up the temp image paths here too)
 
         except Exception as e:
-            st.error(f"Error: {e}")
+            st.error(f"Something went wrong: {e}")
     else:
-        st.warning("Please upload both files first!")
+        st.warning("Please upload both a video and at least one photo!")
