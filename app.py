@@ -34,7 +34,6 @@ img_files = st.file_uploader("photos", type=["jpg", "jpeg", "png"], accept_multi
 
 st.write(" ")
 
-# minimal button
 if st.button("start"):
     if v_file and img_files:
         status = st.empty()
@@ -84,4 +83,5 @@ if st.button("start"):
             st.text("error")
     else:
         st.text("upload files first")
+
 
