@@ -5,7 +5,6 @@ import os
 
 st.set_page_config(page_title="mixer", page_icon="🎬")
 
-# css to force lowercase and hide streamlit branding
 st.markdown("""
     <style>
     * { text-transform: lowercase; }
@@ -25,14 +24,12 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 🎥 video section (blue)
-st.markdown('<div class="video-box">🎥 video (audio)</div>', unsafe_allow_html=True)
+st.markdown('<div class="video-box">🎥 video </div>', unsafe_allow_html=True)
 v_file = st.file_uploader("video", type=["mp4", "mov", "avi"], label_visibility="collapsed")
 
-st.write(" ") # spacing
+st.write(" ")
 
-# 🖼️ photo section (green)
-st.markdown('<div class="photo-box">🖼️ photo(s)</div>', unsafe_allow_html=True)
+st.markdown('<div class="photo-box">🖼️ photos</div>', unsafe_allow_html=True)
 img_files = st.file_uploader("photos", type=["jpg", "jpeg", "png"], accept_multiple_files=True, label_visibility="collapsed")
 
 st.write(" ")
@@ -87,3 +84,4 @@ if st.button("start"):
             st.text("error")
     else:
         st.text("upload files first")
+
