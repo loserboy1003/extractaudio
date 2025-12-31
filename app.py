@@ -9,7 +9,7 @@ st.markdown("""
     <style>
     .stApp {
         background-color: #0e1117;
-        background-image: 
+        background-image:
             radial-gradient(at 0% 0%, rgba(52, 152, 219, 0.15) 0px, transparent 50%),
             radial-gradient(at 100% 0%, rgba(155, 89, 182, 0.15) 0px, transparent 50%),
             radial-gradient(at 100% 100%, rgba(46, 204, 113, 0.15) 0px, transparent 50%),
@@ -26,7 +26,7 @@ st.markdown("""
 st.title("🎬 Media Mixer")
 
 st.markdown('<p class="big-font video-text">🎥 1. Upload VIDEO (for sound)</p>', unsafe_allow_html=True)
-v_file = st.file_uploader("The sound will be taken from this video", type=["mp4", "mov", "avi"], label_visibility="collapsed")
+v_file = st.file_uploader("The sound will be taken from this video", type=["mp4", "mov", "avi"], accept_multiple_files=False, label_visibility="collapsed")
 
 st.markdown("---")
 
@@ -37,38 +37,44 @@ if st.button(" Create Video ", use_container_width=True):
     if v_file and img_files:
         status = st.empty()
         bar = st.progress(0)
-        
+
+        # Initialize paths to ensure cleanup in finally block
+        v_path = None
+        temp_image_paths = []
+        out_file = "final_video.mp4"
+        video_clip = None
+        final_video = None
+
         try:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as t_vid:
                 t_vid.write(v_file.read())
                 v_path = t_vid.name
 
             status.text("⚙️ Creating your slideshow...")
-            
+
             video_clip = mp.VideoFileClip(v_path)
             audio = video_clip.audio
             total_duration = audio.duration
-            
+
             num_photos = len(img_files)
             duration_per_photo = total_duration / num_photos
-            
+
             clips = []
             for img_file in img_files:
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as t_img:
                     t_img.write(img_file.read())
                     i_path = t_img.name
-                
+                    temp_image_paths.append(i_path)
+
                 clip = (mp.ImageClip(i_path)
-                        .with_duration(duration_per_photo)
-                        .with_effects([mp.vfx.CrossFadeIn(0.5)])) 
+                        .with_duration(duration_per_photo))
                 clips.append(clip)
 
             final_slideshow = mp.concatenate_videoclips(clips, method="compose")
             final_video = final_slideshow.with_audio(audio)
-            
-            out_file = "final_video.mp4"
+
             final_video.write_videofile(out_file, fps=24, codec="libx264", audio_codec="aac")
-            
+
             bar.progress(100)
             status.success("✅ Your video is ready!")
 
@@ -76,11 +82,27 @@ if st.button(" Create Video ", use_container_width=True):
             with open(out_file, "rb") as f:
                 st.download_button("💾 DOWNLOAD VIDEO", f, file_name="my_creation.mp4", use_container_width=True)
 
-            video_clip.close()
-            final_video.close()
-            os.remove(v_path)
-
         except Exception as e:
             st.error(f"Something went wrong: {e}")
+        finally:
+            # Cleanup resources
+            if video_clip:
+                video_clip.close()
+            if final_video:
+                final_video.close()
+
+            # Remove temp files
+            if v_path and os.path.exists(v_path):
+                try:
+                    os.remove(v_path)
+                except Exception:
+                    pass
+
+            for i_path in temp_image_paths:
+                if os.path.exists(i_path):
+                    try:
+                        os.remove(i_path)
+                    except Exception:
+                        pass
     else:
         st.warning("Please make sure you've uploaded a video and at least one photo!")
