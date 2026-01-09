@@ -40,14 +40,14 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🎬 मीडिया मिक्सर (Media Mixer)")
+st.title("🎬 Media Mixer")
 
-st.markdown('<p class="hindi-label blue">🎥 १. वीडियो चुनें (आवाज़ के लिए)</p>', unsafe_allow_html=True)
+st.markdown('<p class="hindi-label blue">🎥 1. वीडियो चुनें </p>', unsafe_allow_html=True)
 v_file = st.file_uploader("v", type=["mp4", "mov", "avi"], label_visibility="collapsed")
 
 st.write("---")
 
-st.markdown('<p class="hindi-label green">🖼️ २. फोटो चुनें</p>', unsafe_allow_html=True)
+st.markdown('<p class="hindi-label green">🖼️ 2. फोटो चुनें</p>', unsafe_allow_html=True)
 img_files = st.file_uploader("p", type=["jpg", "jpeg", "png"], accept_multiple_files=True, label_visibility="collapsed")
 
 if st.button("वीडियो बनाएँ"):
@@ -96,3 +96,4 @@ if st.button("वीडियो बनाएँ"):
             st.error("कुछ गलती हुई है")
     else:
         st.warning("कृपया पहले फाइल डालें")
+
