@@ -1,2 +1,2 @@
-streamlit
+gradio
 moviepy==2.1.1
